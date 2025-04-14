@@ -39,13 +39,13 @@ const getToken = async (req, res) => {
         let conversation;
         try {
           conversation = await client.conversations
-            .services(TWILIO_CONVERSATION_SERVICE_SID)
+            .v1.services(TWILIO_CONVERSATION_SERVICE_SID)
             .conversations(room_name)
             .fetch();
         } catch (e) {
           if (e.status === 404) {
             conversation = await client.conversations
-              .services(TWILIO_CONVERSATION_SERVICE_SID)
+              .v1.services(TWILIO_CONVERSATION_SERVICE_SID)
               .conversations
               .create({ friendlyName: room_name });
           } else {
@@ -54,7 +54,7 @@ const getToken = async (req, res) => {
         }
         // Se añade a participante
         await client.conversations
-          .services(TWILIO_CONVERSATION_SERVICE_SID)
+          .v1.services(TWILIO_CONVERSATION_SERVICE_SID)
           .conversations(conversation.sid)
           .participants
           .create({ identity: user_identity });
