@@ -19,60 +19,76 @@ const getToken = async (req, res) => {
       const AccessToken = twilio.jwt.AccessToken;
       const VideoGrant = AccessToken.VideoGrant;
       const ChatGrant = AccessToken.ChatGrant;
-      
+
       const token = new AccessToken(
         TWILIO_ACCOUNT_SID,
         TWILIO_API_KEY_SID,
         TWILIO_API_KEY_SECRET,
         { identity: user_identity }
       );
-      
+
       // Se agrega permiso para Video
       token.addGrant(new VideoGrant({ room: room_name }));
-      
-      // Se verifica si se neceista chat y si se tiene definido el SID
+
+      const client = twilio(TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, {
+        accountSid: TWILIO_ACCOUNT_SID,
+      });
+
+      // Crear la sala de video
+      const room = await client.video.rooms.create({
+        uniqueName: room_name,
+        type: 'peer-to-peer', // se puede usar 'group' si usas grabaciones
+        recordParticipantsOnConnect: false,
+      });
+
+      // Si se solicita la conversación y hay SID de servicio de chat
       if (create_conversation && TWILIO_CONVERSATION_SERVICE_SID) {
-        const client = twilio(TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, {
-          accountSid: TWILIO_ACCOUNT_SID,
-        });
-        // Se verifica si existe la conversación y si no se crea
         let conversation;
         try {
+          // Intentar buscar una conversación usando el room.sid como uniqueName
           conversation = await client.conversations
             .services(TWILIO_CONVERSATION_SERVICE_SID)
-            .conversations(room_name)
+            .conversations(room.sid)
             .fetch();
         } catch (e) {
           if (e.status === 404) {
+            // No existe: crear una nueva conversación con el room.sid como uniqueName
             conversation = await client.conversations
               .services(TWILIO_CONVERSATION_SERVICE_SID)
               .conversations
-              .create({ friendlyName: room_name });
+              .create({
+                uniqueName: room.sid,
+                friendlyName: room_name,
+              });
           } else {
             throw e;
           }
         }
-        // Se añade a participante
+
+        // Agregar al usuario a la conversación
         await client.conversations
           .services(TWILIO_CONVERSATION_SERVICE_SID)
           .conversations(conversation.sid)
           .participants
           .create({ identity: user_identity });
-        // Se añade el permiso para el chat
+
+        // Agregar permisos para Chat
         token.addGrant(
           new ChatGrant({ serviceSid: TWILIO_CONVERSATION_SERVICE_SID })
         );
       }
-      
+
       return res.json({
         token: token.toJwt(),
         room_type: 'peer-to-peer',
       });
+    } else {
+      return res.status(405).json({ error: 'Method Not Allowed' });
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Error generating token:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
-}
+};
+
 module.exports = { getToken };
