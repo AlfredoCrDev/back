@@ -47,7 +47,7 @@ const getToken = async (req, res) => {
             conversation = await client.conversations
               .v1.services(TWILIO_CONVERSATION_SERVICE_SID)
               .conversations
-              .create({ friendlyName: room_name });
+              .create({ friendlyName: room_name, uniqueName: room_name });
           } else {
             throw e;
           }
