@@ -1,21 +1,32 @@
-const twilio = require('twilio');
+const client = require('../config/twilioClient');
 
 const createCompositionHook = async (req, res) => {
   try {
     console.log('Entrando a createCompositionHook');
     if (req.method === 'POST') {
-      const client = twilio(
-        process.env.TWILIO_API_KEY_SID,
-        process.env.TWILIO_API_KEY_SECRET,
-        { accountSid: process.env.TWILIO_ACCOUNT_SID }
-      );
-      const hook = await client.video.compositionHooks.create({
-        friendlyName: 'Kimun Composition Hook',
+      const hook = await client.video.v1.compositionHooks.create({
+        friendlyName: 'Kimun Composition Hook5',
         format: 'mp4',
+        resolution: '1280x720',
         videoLayout: {
-          grid: {
-            video_sources: ['*'],
+          main: {
+            z_pos: 1,
+            x_pos: 0,
+            y_pos: 0,
+            width: 1280,
+            height: 600,
+            video_sources: ["screen-video-share"],
           },
+          row: {
+            z_pos: 2,
+            x_pos: 0,
+            y_pos: 600,
+            width: 1260,
+            height: 120,
+            max_rows: 1,
+            video_sources: ["*"],
+            video_sources_excluded: ["screen-video-share"],
+          }
         },
         audioSources: ['*'],
         trim: true,
@@ -29,7 +40,7 @@ const createCompositionHook = async (req, res) => {
     }
   } catch (error) {
       console.error('Error al crear el hook de composición:', error.message, 'Código:', error.code);
-      res.status(500).json({ error: 'Error creando Composition Hook' });
+      res.status(500).json({ error: 'Error creando Composition Hook', details: error.message });
     }
   }
 
