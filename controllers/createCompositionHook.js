@@ -5,7 +5,7 @@ const createCompositionHook = async (req, res) => {
     console.log('Entrando a createCompositionHook');
     if (req.method === 'POST') {
       const hook = await client.video.v1.compositionHooks.create({
-        friendlyName: 'Kimun Composition Hook5',
+        friendlyName: 'Kimun Composition Hook',
         format: 'mp4',
         resolution: '1280x720',
         videoLayout: {
